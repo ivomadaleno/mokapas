@@ -1,44 +1,36 @@
+
 const sheetID = "1qx-Fots7e-50dDnsKbMDjv-a4bS62D-sqawVLDhZUfU";
 const base = `https://docs.google.com/spreadsheets/d/${sheetID}/gviz/tq?`;
 const sheetName = 'Base';
 const query = encodeURIComponent('Select *');
 const url = `${base}&sheet=${sheetName}&tq=${query}`;
-
-const cardsContainer = document.getElementById("cards");
+const cardsContainer = document.getElementById("cards-container");
 const searchInput = document.getElementById("search");
 
 fetch(url)
   .then(res => res.text())
   .then(rep => {
     const jsonData = JSON.parse(rep.substring(47).slice(0, -2));
-    const data = jsonData.table.rows.map(row => ({
-      nome: row.c[0]?.v || "",
-      tema: row.c[1]?.v || "",
-      link: row.c[2]?.v || ""
-    }));
-
-    function renderCards(filteredData) {
-      cardsContainer.innerHTML = "";
-      filteredData.forEach(item => {
-        const card = document.createElement("div");
-        card.className = "card";
-        card.innerHTML = `
-          <h2>${item.nome}</h2>
-          <p><strong>Tema:</strong> ${item.tema}</p>
-          <p><a href="${item.link}" target="_blank">Abrir</a></p>
-        `;
-        cardsContainer.appendChild(card);
-      });
-    }
-
-    renderCards(data);
-
-    searchInput.addEventListener("input", e => {
-      const value = e.target.value.toLowerCase();
-      const filtered = data.filter(d =>
-        d.nome.toLowerCase().includes(value) ||
-        d.tema.toLowerCase().includes(value)
-      );
-      renderCards(filtered);
+    const data = jsonData.table.rows.map(row => row.c.map(cell => cell?.v || ""));
+    displayCards(data);
+    searchInput.addEventListener("input", () => {
+      const term = searchInput.value.toLowerCase();
+      const filtered = data.filter(row => row.some(col => col.toLowerCase().includes(term)));
+      displayCards(filtered);
     });
   });
+
+function displayCards(data) {
+  cardsContainer.innerHTML = "";
+  data.forEach(([nome, descrição, contacto, link]) => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.innerHTML = `
+      <h2>${nome}</h2>
+      <p>${descrição}</p>
+      <p><strong>Contacto:</strong> ${contacto}</p>
+      <a href="${link}" target="_blank">Ver Perfil</a>
+    `;
+    cardsContainer.appendChild(card);
+  });
+}
